@@ -6,7 +6,7 @@
   (:use :cl :cl-user :interact))
 (in-package :click)
 
-(defparameter *shadow-symbols*
+(defparameter *shadow-names*
   '(corner-top-left top-left top top-right
     corner-top-right right-top right right-bottom
     corner-bottom-right bottom-right bottom bottom-left
