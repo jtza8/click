@@ -11,3 +11,12 @@
     corner-top-right right-top right right-bottom
     corner-bottom-right bottom-right bottom bottom-left
     corner-bottom-left left-bottom left left-top))
+
+(defparameter *window-panel-names*
+  '(centre corner-top-left top corner-top-right
+    right corner-bottom-right bottom corner-bottom-left left))
+
+(defparameter *base-node-path* '(:gui))
+(defparameter *base-sprite-path*
+  (asdf:system-relative-pathname :click "../gui/"))
+(defparameter *init-hook* '())

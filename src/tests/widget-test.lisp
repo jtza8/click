@@ -6,7 +6,10 @@
 
 (defun test-widgets-manually ()
   (with-display-system (screen-colour '(1 1 1 0))
-    (load-sprite-path (asdf:system-relative-pathname :click "../gui/")
-                      :parent-node-path '(:gui))
-    (let ((window (make-instance 'window :x 100 :y 100 :width 100 :height 200)))
-      (add-to-root window :window))))
+    (init-default-theme)
+    (let ((window-1 
+           (make-instance 'window :x 100 :y 100 :width 150 :height 200))
+          (window-2
+           (make-instance 'window :x 300 :y 120 :width 200 :height 150)))
+      (add-to-root window-1)
+      (add-to-root window-2))))

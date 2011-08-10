@@ -4,4 +4,5 @@
   :license "BSD-style"
   :serial t
   :components ((:file "package")
-               (:file "window")))
+               (:file "window")
+               (:file "click")))

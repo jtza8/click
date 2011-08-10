@@ -7,20 +7,29 @@
 (defclass window (container)
   ((active :initform nil)
    (inactive-shadows :allocation :class)
-   (active-shadows :allocation :class)))
+   (active-shadows :allocation :class)
+   (inactive-panel :allocation :class)
+   (active-panel :allocation :class)))
 
 (defmethod init-sprites :after ((window window))
-  (with-slots (inactive-shadows active-shadows) window
-    (unless (slot-boundp window 'inactive-shadows)
+  (with-slots (inactive-shadows active-shadows
+               inactive-panel active-panel) window
+    (unless (and (slot-boundp window 'inactive-shadows)
+                 (slot-boundp window 'active-shadows))
       (setf inactive-shadows
             (make-sprite-snippets 
                *shadow-names*
-               (sprite-node :gui :window :inactive :shadows))))
-    (unless (slot-boundp window 'active-shadows)
-      (setf active-shadows
+               (sprite-node :gui :window :inactive :shadows))
+            active-shadows
             (make-sprite-snippets
                *shadow-names*
-               (sprite-node :gui :window :active :shadows))))))
+               (sprite-node :gui :window :active :shadows))))
+    (unless (and (slot-boundp window 'inactive-panel)
+                 (slot-boundp window 'active-panel))
+      (setf inactive-panel
+            (make-sprite-snippets
+               *window-panel-names*
+               (sprite-node :gui :window :inactive :panel))))))
 
 (defmethod draw-shadows ((window window))
   (with-slots (active inactive-shadows active-shadows (window-width width)
@@ -94,5 +103,64 @@
                 y 0)
           (draw-snippet left-top))))
 
+(defmethod draw-panel ((window window))
+  (with-slots (active inactive-panel active-panel (window-width width)
+               (window-height height)) window
+    (with-sprite-snippets ((if active active-panel inactive-panel)
+                           *window-panel-names*)
+      ; Top left corner:
+      (draw-snippet corner-top-left)
+      ; Top:
+      (incf x (width corner-top-left))
+      (setf width (- window-width
+                     (width corner-top-left)
+                     (width corner-top-right)))
+      (draw-snippet top)
+      ; Top right corner:
+      (incf x width)
+      (clear-width)
+      (draw-snippet corner-top-right)
+      ; Right:
+      (setf height (- window-height
+                      (height corner-top-right)
+                      (height corner-bottom-right)))
+      (setf y (height corner-top-right)
+            width (width corner-top-right))
+      (draw-snippet right)
+      ; Bottom right corner:
+      (incf y height)
+      (clear-height)
+      (clear-width)
+      (draw-snippet corner-bottom-right)
+      ; Bottom:
+      (setf x (width corner-bottom-right)
+            width (- window-width
+                     (width corner-bottom-right)
+                     (width corner-bottom-left))
+            height (height corner-bottom-right))
+      (draw-snippet bottom)
+      (clear-width)
+      (clear-height)
+      ; Bottom left corner:
+      (setf x 0)
+      (draw-snippet corner-bottom-left)
+      ; Left:
+      (setf y (height corner-top-left)
+            height (- window-height 
+                      (height corner-top-left)
+                      (height corner-bottom-left))
+            width (width corner-top-left))
+      (draw-snippet left)
+      ; Centre:
+      (setf x width
+            width (- window-width
+                     (width corner-bottom-right)
+                     (width corner-bottom-left))
+            height (- window-height 
+                      (height corner-top-left)
+                      (height corner-bottom-left)))
+      (draw-snippet centre))))
+
 (defmethod draw ((window window))
-  (draw-shadows window))
+  (draw-shadows window)
+  (draw-panel window))
