@@ -3,3 +3,4 @@
 ; in the root directory of this project.
 
 (in-package :click)
+(use-package :xlunit)

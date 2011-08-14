@@ -20,3 +20,6 @@
 (defparameter *base-sprite-path*
   (asdf:system-relative-pathname :click "../gui/"))
 (defparameter *init-hook* '())
+
+(defpackage :click-gui-macros
+  (:use :cl :click :cl-user))

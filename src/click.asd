@@ -4,5 +4,6 @@
   :license "BSD-style"
   :serial t
   :components ((:file "package")
+               (:file "window-container")
                (:file "window")
                (:file "click")))

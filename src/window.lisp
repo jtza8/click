@@ -5,31 +5,64 @@
 (in-package :click)
 
 (defclass window (container)
-  ((active :initform nil)
+  ((active :initform nil
+           :accessor active)
+   (dragging :initform nil
+             :reader dragging)
+   (drag-x-offset :initform 0)
+   (drag-y-offset :initform 0)
    (inactive-shadows :allocation :class)
    (active-shadows :allocation :class)
    (inactive-panel :allocation :class)
    (active-panel :allocation :class)))
 
+(defmethod initialize-instance :after ((window window) &key)
+  (desire-events window :mouse-button-down #'handle-mouse-button-down
+                 :mouse-button-up #'handle-mouse-button-up
+                 :mouse-motion #'handle-mouse-motion)
+  (provide-events window :click-window-focus))
+
 (defmethod init-sprites :after ((window window))
   (with-slots (inactive-shadows active-shadows
                inactive-panel active-panel) window
-    (unless (and (slot-boundp window 'inactive-shadows)
-                 (slot-boundp window 'active-shadows))
-      (setf inactive-shadows
-            (make-sprite-snippets 
-               *shadow-names*
-               (sprite-node :gui :window :inactive :shadows))
-            active-shadows
-            (make-sprite-snippets
-               *shadow-names*
-               (sprite-node :gui :window :active :shadows))))
-    (unless (and (slot-boundp window 'inactive-panel)
-                 (slot-boundp window 'active-panel))
-      (setf inactive-panel
-            (make-sprite-snippets
-               *window-panel-names*
-               (sprite-node :gui :window :inactive :panel))))))
+    (let ((base-node (sprite-node (append *base-node-path* '(:window)))))
+      (init-class-snippets window
+        (inactive-shadows *shadow-names* (node-of base-node :inactive :shadows))
+        (active-shadows *shadow-names* (node-of base-node :active :shadows))
+        (inactive-panel *window-panel-names*
+                        (node-of base-node :inactive :panel))
+        (active-panel *window-panel-names*
+                      (node-of base-node :active :panel))))))
+
+(defmethod handle-mouse-button-down ((window window) event)
+  (with-slots (dragging drag-x-offset drag-y-offset) window
+    (with-event-keys (x y button) event
+      (when (and (within window x y) (= button 1))
+        (setf dragging t
+              drag-x-offset (- (absolute-x window) x)
+              drag-y-offset (- (absolute-y window) y)))))
+  (send-event window event))
+
+(defmethod handle-mouse-button-up ((window window) event)
+  (with-slots (dragging) window
+    (with-event-keys (button) event
+      (when (= button 1)
+        (setf dragging nil))))
+  (send-event window event))
+
+(defmethod handle-mouse-motion ((window window) event)
+  (with-slots ((window-x x) (window-y y) dragging drag-x-offset
+               drag-y-offset parent) window
+    (with-event-keys (x y) event
+      (when dragging
+        (let ((dx x)
+              (dy y))
+          (when parent
+            (destructuring-bind (ax ay) (absolute-pos parent)
+              (setf dx (- x ax) dy (- y ay))))
+          (setf window-x (+ dx drag-x-offset)
+                window-y (+ dy drag-y-offset))))))
+  (send-event window event))
 
 (defmethod draw-shadows ((window window))
   (with-slots (active inactive-shadows active-shadows (window-width width)
@@ -105,62 +138,56 @@
 
 (defmethod draw-panel ((window window))
   (with-slots (active inactive-panel active-panel (window-width width)
-               (window-height height)) window
+                      (window-height height)) window
     (with-sprite-snippets ((if active active-panel inactive-panel)
                            *window-panel-names*)
-      ; Top left corner:
-      (draw-snippet corner-top-left)
-      ; Top:
-      (incf x (width corner-top-left))
-      (setf width (- window-width
-                     (width corner-top-left)
-                     (width corner-top-right)))
-      (draw-snippet top)
-      ; Top right corner:
-      (incf x width)
-      (clear-width)
-      (draw-snippet corner-top-right)
-      ; Right:
-      (setf height (- window-height
-                      (height corner-top-right)
-                      (height corner-bottom-right)))
-      (setf y (height corner-top-right)
-            width (width corner-top-right))
-      (draw-snippet right)
-      ; Bottom right corner:
-      (incf y height)
-      (clear-height)
-      (clear-width)
-      (draw-snippet corner-bottom-right)
-      ; Bottom:
-      (setf x (width corner-bottom-right)
-            width (- window-width
-                     (width corner-bottom-right)
-                     (width corner-bottom-left))
-            height (height corner-bottom-right))
-      (draw-snippet bottom)
-      (clear-width)
-      (clear-height)
-      ; Bottom left corner:
-      (setf x 0)
-      (draw-snippet corner-bottom-left)
-      ; Left:
-      (setf y (height corner-top-left)
-            height (- window-height 
-                      (height corner-top-left)
-                      (height corner-bottom-left))
-            width (width corner-top-left))
-      (draw-snippet left)
-      ; Centre:
-      (setf x width
-            width (- window-width
-                     (width corner-bottom-right)
-                     (width corner-bottom-left))
-            height (- window-height 
-                      (height corner-top-left)
-                      (height corner-bottom-left)))
-      (draw-snippet centre))))
+      (let ((centre-width (- window-width
+                             (width corner-top-left)
+                             (width corner-top-right)))
+            (centre-height (- window-height
+                              (height corner-top-right)
+                              (height corner-bottom-right))))
+        ; Top left corner:
+        (draw-snippet corner-top-left)
+        ; Top:
+        (incf x (width corner-top-left))
+        (setf width centre-width)
+        (draw-snippet top)
+        ; Top right corner:
+        (incf x width)
+        (clear-width)
+        (draw-snippet corner-top-right)
+        ; Right:
+        (setf height centre-height)
+        (setf y (height corner-top-right)
+              width (width corner-top-right))
+        (draw-snippet right)
+        ; Bottom right corner:
+        (incf y height)
+        (clear-height)
+        (clear-width)
+        (draw-snippet corner-bottom-right)
+        ; Bottom:
+        (setf x (width corner-bottom-right)
+              width centre-width
+              height (height corner-bottom-right))
+        (draw-snippet bottom)
+        (clear-width)
+        (clear-height)
+        ; Bottom left corner:
+        (setf x 0)
+        (draw-snippet corner-bottom-left)
+        ; Left:
+        (setf y (height corner-top-left)
+              height centre-height
+              width (width corner-top-left))
+        (draw-snippet left)
+        ; Centre:
+        (setf x width
+              width centre-width
+              height centre-height)
+        (draw-snippet centre)))))
 
-(defmethod draw ((window window))
+(defmethod draw :before ((window window))
   (draw-shadows window)
   (draw-panel window))
