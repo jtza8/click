@@ -9,17 +9,11 @@
                         :width 1024
                         :height 768)
     (init-default-theme)
-    (let ((window-container (make-instance 'window-container))
-          (window-1 
-           (make-instance 'window :x 100 :y 100 :width 150 :height 200))
-          (window-2
-           (make-instance 'window :x 300 :y 120 :width 300 :height 200))
-          (window-3
-           (make-instance 'window :x 200 :y 220 :width 250 :height 150)))
-      (add-widget window-container window-1)
-      (add-widget window-container window-2)
-      (add-widget window-container window-3)
-      (add-to-root window-container))
+    (add-to-root
+     (window-container
+       :widgets (list (window :x 100 :y 100 :width 150 :height 200)
+                      (window :x 300 :y 120 :width 300 :height 200)
+                      (window :x 200 :y 220 :width 250 :height 150))))
     (with-event-loop
         (event
          quit

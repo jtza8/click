@@ -4,7 +4,7 @@
 
 (in-package :click)
 
-(defclass window (container)
+(defclass window (widget-container)
   ((active :initform nil
            :accessor active)
    (dragging :initform nil
@@ -15,6 +15,8 @@
    (active-shadows :allocation :class)
    (inactive-panel :allocation :class)
    (active-panel :allocation :class)))
+
+(publish-widget window)
 
 (defmethod initialize-instance :after ((window window) &key)
   (desire-events window :mouse-button-down #'handle-mouse-button-down

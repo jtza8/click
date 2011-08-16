@@ -3,7 +3,7 @@
 ; in the root directory of this project.
 
 (defpackage :click
-  (:use :cl :cl-user :interact))
+  (:use :cl :cl-user :interact :meta-package))
 (in-package :click)
 
 (defparameter *shadow-names*
@@ -19,7 +19,6 @@
 (defparameter *base-node-path* '(:gui))
 (defparameter *base-sprite-path*
   (asdf:system-relative-pathname :click "../gui/"))
-(defparameter *init-hook* '())
 
 (defpackage :click-gui-macros
   (:use :cl :click :cl-user))

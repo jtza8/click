@@ -7,6 +7,8 @@
 (defclass window-container (container)
   ())
 
+(publish-widget window-container)
+
 (defmethod initialize-instance :after ((container window-container) &key)
   (desire-events container :mouse-button-down #'handle-mouse-button-down))
 
@@ -32,7 +34,7 @@
       (with-event-keys (x y button) event
         (unless (and (within (active-window container) x y)
                      (= button 1))
-          (loop for i from (- (length widgets) 2) downto 0
+          (loop for i from (- (length widgets) 1) downto 0
                 for new-window = (aref widgets i)
                 when (within new-window x y)
                   do (let ((active-window (active-window container)))
@@ -43,6 +45,7 @@
                        (send-event new-window '(:click-window-focus
                                                 :state t))
                        (order-top container new-window)
+                       (return)
                        ;; Click to focus?
                        ;; (return-from handle-mouse-button-down)
                        ))))))
