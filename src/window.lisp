@@ -5,18 +5,16 @@
 (in-package :click)
 
 (defclass window (widget-container)
-  ((active :initform nil
-           :accessor active)
+  ((focus :initform nil
+           :accessor focus)
    (dragging :initform nil
              :reader dragging)
    (drag-x-offset :initform 0)
    (drag-y-offset :initform 0)
-   (inactive-shadows :allocation :class)
-   (active-shadows :allocation :class)
-   (inactive-panel :allocation :class)
-   (active-panel :allocation :class)))
-
-(publish-widget window)
+   (infocus-shadows :allocation :class)
+   (focus-shadows :allocation :class)
+   (infocus-panel :allocation :class)
+   (focus-panel :allocation :class)))
 
 (defmethod initialize-instance :after ((window window) &key)
   (desire-events window :mouse-button-down #'handle-mouse-button-down
@@ -25,15 +23,15 @@
   (provide-events window :click-window-focus))
 
 (defmethod init-sprites :after ((window window))
-  (with-slots (inactive-shadows active-shadows
-               inactive-panel active-panel) window
+  (with-slots (infocus-shadows focus-shadows
+               infocus-panel focus-panel) window
     (let ((base-node (sprite-node (append *base-node-path* '(:window)))))
       (init-class-snippets window
-        (inactive-shadows *shadow-names* (node-of base-node :inactive :shadows))
-        (active-shadows *shadow-names* (node-of base-node :active :shadows))
-        (inactive-panel *window-panel-names*
+        (infocus-shadows *shadow-names* (node-of base-node :inactive :shadows))
+        (focus-shadows *shadow-names* (node-of base-node :active :shadows))
+        (infocus-panel *window-panel-names*
                         (node-of base-node :inactive :panel))
-        (active-panel *window-panel-names*
+        (focus-panel *window-panel-names*
                       (node-of base-node :active :panel))))))
 
 (defmethod handle-mouse-button-down ((window window) event)
@@ -67,9 +65,9 @@
   (send-event window event))
 
 (defmethod draw-shadows ((window window))
-  (with-slots (active inactive-shadows active-shadows (window-width width)
+  (with-slots (focus infocus-shadows focus-shadows (window-width width)
                (window-height height)) window
-    (with-sprite-snippets ((if active active-shadows inactive-shadows)
+    (with-sprite-snippets ((if focus focus-shadows infocus-shadows)
                            *shadow-names*)
           ; Top left corner:
           (move-to (- (width corner-top-left)) (- (height corner-top-left)))
@@ -139,9 +137,9 @@
           (draw-snippet left-top))))
 
 (defmethod draw-panel ((window window))
-  (with-slots (active inactive-panel active-panel (window-width width)
+  (with-slots (focus infocus-panel focus-panel (window-width width)
                       (window-height height)) window
-    (with-sprite-snippets ((if active active-panel inactive-panel)
+    (with-sprite-snippets ((if focus focus-panel infocus-panel)
                            *window-panel-names*)
       (let ((centre-width (- window-width
                              (width corner-top-left)

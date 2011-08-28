@@ -5,6 +5,7 @@
   :serial t
   :components ((:file "package")
                (:file "macros")
+               (:file "conditions")
                (:file "window-container")
                (:file "widget-container")
                (:file "window")

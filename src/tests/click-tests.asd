@@ -5,4 +5,5 @@
   :depends-on ("click" "xlunit")
   :components ((:file "package")
                (:file "window-container-test")
+               (:file "widget-container-test")
                (:file "widget-test")))

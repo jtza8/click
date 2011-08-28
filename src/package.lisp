@@ -16,6 +16,14 @@
   '(centre corner-top-left top corner-top-right
     right corner-bottom-right bottom corner-bottom-left left))
 
+(defparameter *button-sprite-names*
+  '(left centre right))
+
+(defparameter *button-border-sprite-names*
+  '(left corner-top-left top-left top top-right corner-top-right
+    right corner-bottom-right bottom-right bottom bottom-left
+    corner-bottom-left))
+
 (defparameter *base-node-path* '(:gui))
 (defparameter *base-sprite-path*
   (asdf:system-relative-pathname :click "../gui/"))
