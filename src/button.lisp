@@ -6,64 +6,132 @@
 
 (defclass button (widget)
   ((focus :initform nil
-           :accessor focus)
+          :reader focus)
    (down :initform nil
          :accessor down)
    (height :initform 20)
    (width :initform 50)
-   (infocus-button-sprites :allocation :class)
-   (infocus-border-sprites :allocation :class)
-   (focus-button-sprites :allocation :class)
-   (focus-button-down-sprites :allocation :class)
-   (focus-border-sprites :allocation :class)
-   text-sprite))
+   (inactive-button-sprites :allocation :class)
+   (inactive-border-sprites :allocation :class)
+   (active-button-sprites :allocation :class)
+   (active-button-down-sprites :allocation :class)
+   (active-border-sprites :allocation :class)
+   (ideal-width :initform 0)
+   inactive-text-sprite
+   active-text-sprite))
 
-(defmethod initialize-instance :after ((button button) &key (text ""))
-  (with-slots (text-sprite) button
-    (setf (text button) text)))
-
-(defmethod text ((button button))
-  (with-slots (text-sprite) button
-    (text text-sprite)))
-
-(defmethod (setf text) (value (button button))
-  (with-slots (text-sprite infocus-button-sprites width) button
-    (with-sprite-snippets (infocus-button-sprites *button-sprite-names*
-                           "button-")
-      (setf (text text-sprite) value
-            width (max width (+ (width text-sprite)
-                                (width button-left)
-                                (width button-right)))))))
+(defmethod initialize-instance :after ((button button)
+                                       &key (text "") (width 50))
+  (with-slots (text-sprite ideal-width) button
+    (setf (text button) text
+          ideal-width width)
+    (update-width button))
+  (desire-events button :mouse-button-down #'handle-mouse-button-down
+                 :mouse-button-up #'handle-mouse-button-up
+                 :mouse-motion #'handle-mouse-motion
+                 :key-down #'handle-key-down
+                 :key-up #'handle-key-up)
+  (provide-events button :button-click))
 
 (defmethod init-sprites :after ((button button))
-  (with-slots (focus infocus-button-sprites focus-button-sprites
-               focus-button-down-sprites infocus-border-sprites
-               focus-border-sprites text-sprite) button
-    (let ((base-node (sprite-node (append *base-node-path* '(:button)))))
-      (setf text-sprite
-            (diverge (sprite-node (append *base-node-path* '(:font :vera)))
-                     :colour '(0.7 0.7 0.7 1.0)
-                     :size 10))
-      (init-class-snippets button
-        (infocus-button-sprites *button-sprite-names*
-                                 (node-of base-node :inactive :button :up))
-        (focus-button-sprites *button-sprite-names*
-                               (node-of base-node :active :button :up))
-        (focus-button-down-sprites *button-sprite-names*
-                                    (node-of base-node :active :button :down))
-        (infocus-border-sprites *button-border-sprite-names*
-                                 (node-of base-node :inactive :border))
-        (focus-border-sprites *button-border-sprite-names*
-                               (node-of base-node :active :border))))))
+  (with-slots (focus inactive-button-sprites active-button-sprites
+               active-button-down-sprites inactive-border-sprites
+               active-border-sprites inactive-text-sprite
+               active-text-sprite) button
+    (setf inactive-text-sprite
+          (clone (node-of *base-node* :inactive :button :font))
+          active-text-sprite
+          (clone (node-of *base-node* :active :button :font)))
+    (init-class-snippets button
+      (inactive-button-sprites *button-sprite-names*
+                               (node-of *base-node* :inactive :button :up))
+      (active-button-sprites *button-sprite-names*
+                             (node-of *base-node* :active :button :up))
+      (active-button-down-sprites *button-sprite-names*
+                                  (node-of *base-node* :active :button :down))
+      (inactive-border-sprites *button-border-sprite-names*
+                               (node-of *base-node* :inactive :button :border))
+      (active-border-sprites *button-border-sprite-names*
+                             (node-of *base-node* :active :button :border)))))
+
+(internal update-width)
+(defmethod update-width ((button button))
+  (with-slots (focus active-text-sprite inactive-text-sprite
+               active-button-sprites inactive-button-sprites width
+               ideal-width) button
+    (with-sprite-snippets ((if focus
+                               active-button-sprites
+                               inactive-button-sprites)
+                           *button-sprite-names*
+                           "button-")
+      (setf width (max ideal-width (+ (width (if focus
+                                                 active-text-sprite
+                                                 inactive-text-sprite))
+                                      (width button-left)
+                                      (width button-right)))))))
+
+(defmethod (setf width) (value (button button))
+  (with-slots (ideal-width) button
+    (setf ideal-width value)
+    (update-width button)))
+
+(defmethod text ((button button))
+  (with-slots (focus inactive-text-sprite active-text-sprite) button
+    (text (if focus active-text-sprite inactive-text-sprite))))
+
+(defmethod (setf text) (value (button button))
+  (with-slots (inactive-text-sprite active-text-sprite width) button
+    (setf (text inactive-text-sprite) value
+          (text active-text-sprite) value)
+    (update-width button)))
+
+(defmethod (setf focus) (value (button button))
+  (with-slots (focus) button
+    (setf focus value)
+    (update-width button)))
+
+(internal update-button-down-state)
+(defmethod update-button-down-state ((button button) event)
+  (with-slots (down) button
+    (with-event-keys (x y state) event
+      (setf down (and (= state 1) (within button x y))))))
+
+(defmethod handle-mouse-button-down ((button button) event)
+  (with-event-keys ((mouse-button button)) event
+    (when (= mouse-button 1)
+     (update-button-down-state button event))))
+
+(defmethod handle-mouse-button-up ((button button) event)
+  (with-slots (down) button
+    (with-event-keys (x y (mouse-button button)) event
+      (when (and (within button x y) (= mouse-button 1))
+        (send-event button `(:button-click :source ,button))
+        (setf down nil)))))
+
+(defmethod handle-mouse-motion ((button button) event)
+  (update-button-down-state button event))
+
+(defmethod handle-key-down ((button button) event)
+  (with-slots (down) button
+    (with-event-keys (key) event
+      (when (eq key :space)
+        (setf down t)))))
+
+(defmethod handle-key-up ((button button) event)
+  (with-slots (down) button
+    (with-event-keys (key) event
+      (when (and down (eq key :space))
+        (send-event button `(:button-click :source ,button))
+        (setf down nil)))))
 
 (defmethod draw-button ((button button))
-  (with-slots (focus down focus-button-sprites focus-button-down-sprites
-               (button-width width) infocus-button-sprites) button
+  (with-slots (focus down active-button-sprites active-button-down-sprites
+               (button-width width) inactive-button-sprites) button
     (with-sprite-snippets ((if focus
                                (if down
-                                   focus-button-down-sprites
-                                   focus-button-sprites)
-                               infocus-button-sprites)
+                                   active-button-down-sprites
+                                   active-button-sprites)
+                               inactive-button-sprites)
                            *button-sprite-names*)
       ; Left:
       (draw-snippet left)
@@ -77,11 +145,11 @@
       (draw-snippet right))))
 
 (defmethod draw-border ((button button))
-  (with-slots (focus infocus-border-sprites focus-border-sprites
+  (with-slots (focus inactive-border-sprites active-border-sprites
                (button-width width) (button-height height)) button
     (with-sprite-snippets ((if focus
-                               focus-border-sprites
-                               infocus-border-sprites)
+                               active-border-sprites
+                               inactive-border-sprites)
                            *button-border-sprite-names*)
       ; Left:
       (decf x (width left))
@@ -131,15 +199,14 @@
       (draw-snippet corner-bottom-left))))
 
 (defmethod draw-text ((button button))
-  (with-slots (text-sprite (button-width width) (button-height height)) button
-    (draw-sprite text-sprite
-                 :x (/ (- button-width (width text-sprite)) 2)
-                 :y (/ (- button-height (height text-sprite)) 2))))
+  (with-slots (focus inactive-text-sprite active-text-sprite
+               (button-width width) (button-height height)) button
+    (let ((text-sprite (if focus active-text-sprite inactive-text-sprite)))
+      (draw-sprite text-sprite
+                   :x (/ (- button-width (width text-sprite)) 2)
+                   :y (/ (- button-height (size text-sprite)) 2)))))
 
 (defmethod draw ((button button))
   (draw-border button)
   (draw-button button)
   (draw-text button))
-
-(defmethod handle-mouse-button-down ((button button) event)
-  ())

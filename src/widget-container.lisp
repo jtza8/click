@@ -55,6 +55,13 @@
     (call-next-method)
     (focus-widget container next-widget)))
 
+(defmethod send-event ((container widget-container) event &rest targets)
+  (declare (ignore targets))
+  (let ((target (focused-widget container)))
+    (if (and target (desires-event-p target (event-type event)))
+        (call-next-method container event target)
+        (call-next-method))))
+
 (defmethod handle-key-down ((container widget-container) event)
   (with-event-keys (key mod-key) event
     (if (eq key :tab)
@@ -73,5 +80,6 @@
             when (within widget x y)
               do (progn (focus-widget container widget)
                         (setf found-focus-target t)
+                        (send-event container event)
                         (return))
             finally (unless found-focus-target (call-next-method))))))

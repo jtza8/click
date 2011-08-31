@@ -6,33 +6,41 @@
 
 (defclass window (widget-container)
   ((focus :initform nil
-           :accessor focus)
+          :accessor focus)
    (dragging :initform nil
              :reader dragging)
    (drag-x-offset :initform 0)
    (drag-y-offset :initform 0)
-   (infocus-shadows :allocation :class)
-   (focus-shadows :allocation :class)
-   (infocus-panel :allocation :class)
-   (focus-panel :allocation :class)))
+   (inactive-shadows :allocation :class)
+   (active-shadows :allocation :class)
+   (inactive-panel :allocation :class)
+   (active-panel :allocation :class)
+   active-title-font
+   inactive-title-font))
 
-(defmethod initialize-instance :after ((window window) &key)
+(defmethod initialize-instance :after ((window window) &key (title "Untitled"))
   (desire-events window :mouse-button-down #'handle-mouse-button-down
                  :mouse-button-up #'handle-mouse-button-up
                  :mouse-motion #'handle-mouse-motion)
-  (provide-events window :click-window-focus))
+  (provide-events window :click-window-focus)
+  (setf (title window) title))
 
 (defmethod init-sprites :after ((window window))
-  (with-slots (infocus-shadows focus-shadows
-               infocus-panel focus-panel) window
-    (let ((base-node (sprite-node (append *base-node-path* '(:window)))))
-      (init-class-snippets window
-        (infocus-shadows *shadow-names* (node-of base-node :inactive :shadows))
-        (focus-shadows *shadow-names* (node-of base-node :active :shadows))
-        (infocus-panel *window-panel-names*
-                        (node-of base-node :inactive :panel))
-        (focus-panel *window-panel-names*
-                      (node-of base-node :active :panel))))))
+  (with-slots (inactive-shadows active-shadows inactive-panel active-panel
+               inactive-title-font active-title-font) window
+    (setf inactive-title-font
+          (clone (node-of *base-node* :inactive :window :title-font))
+          active-title-font
+          (clone (node-of *base-node* :active :window :title-font)))
+    (init-class-snippets window
+      (inactive-shadows *shadow-names*
+                        (node-of *base-node* :inactive :window :shadows))
+      (active-shadows *shadow-names*
+                      (node-of *base-node* :active :window :shadows))
+      (inactive-panel *window-panel-names*
+                      (node-of *base-node* :inactive :window :panel))
+      (active-panel *window-panel-names*
+                    (node-of *base-node* :active :window :panel)))))
 
 (defmethod handle-mouse-button-down ((window window) event)
   (with-slots (dragging drag-x-offset drag-y-offset) window
@@ -40,8 +48,7 @@
       (when (and (within window x y) (= button 1))
         (setf dragging t
               drag-x-offset (- (absolute-x window) x)
-              drag-y-offset (- (absolute-y window) y)))))
-  (send-event window event))
+              drag-y-offset (- (absolute-y window) y))))))
 
 (defmethod handle-mouse-button-up ((window window) event)
   (with-slots (dragging) window
@@ -64,10 +71,19 @@
                 window-y (+ dy drag-y-offset))))))
   (send-event window event))
 
+(defmethod title ((window window))
+  (with-slots (focus active-title-font inactive-title-font) window
+    (text (if focus active-title-font inactive-title-font))))
+
+(defmethod (setf title) (value (window window))
+  (with-slots (active-title-font inactive-title-font) window
+    (setf (text active-title-font) value
+          (text inactive-title-font) value)))
+
 (defmethod draw-shadows ((window window))
-  (with-slots (focus infocus-shadows focus-shadows (window-width width)
+  (with-slots (focus inactive-shadows active-shadows (window-width width)
                (window-height height)) window
-    (with-sprite-snippets ((if focus focus-shadows infocus-shadows)
+    (with-sprite-snippets ((if focus active-shadows inactive-shadows)
                            *shadow-names*)
           ; Top left corner:
           (move-to (- (width corner-top-left)) (- (height corner-top-left)))
@@ -137,9 +153,9 @@
           (draw-snippet left-top))))
 
 (defmethod draw-panel ((window window))
-  (with-slots (focus infocus-panel focus-panel (window-width width)
+  (with-slots (focus inactive-panel active-panel (window-width width)
                       (window-height height)) window
-    (with-sprite-snippets ((if focus focus-panel infocus-panel)
+    (with-sprite-snippets ((if focus active-panel inactive-panel)
                            *window-panel-names*)
       (let ((centre-width (- window-width
                              (width corner-top-left)
@@ -188,6 +204,13 @@
               height centre-height)
         (draw-snippet centre)))))
 
+(defmethod draw-title ((window window))
+  (with-slots (focus active-title-font inactive-title-font width) window
+    (let ((title-font (if focus active-title-font inactive-title-font)))
+     (draw-sprite title-font :x (/ (- width (width title-font)) 2)
+                  :y *window-title-y*))))
+
 (defmethod draw :before ((window window))
   (draw-shadows window)
-  (draw-panel window))
+  (draw-panel window)
+  (draw-title window))

@@ -24,9 +24,9 @@
     right corner-bottom-right bottom-right bottom bottom-left
     corner-bottom-left))
 
+(defvar *base-node*)
 (defparameter *base-node-path* '(:gui))
 (defparameter *base-sprite-path*
   (asdf:system-relative-pathname :click "../gui/"))
 
-(defpackage :click-gui-macros
-  (:use :cl :click :cl-user))
+(defparameter *window-title-y* 3)
