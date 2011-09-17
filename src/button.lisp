@@ -4,10 +4,8 @@
 
 (in-package :click)
 
-(defclass button (widget)
-  ((focus :initform nil
-          :reader focus)
-   (down :initform nil
+(defclass button (gui-widget)
+  ((down :initform nil
          :accessor down)
    (height :initform 20)
    (width :initform 50)

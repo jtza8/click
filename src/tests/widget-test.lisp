@@ -41,14 +41,16 @@
     (init-default-theme)
     (add-to-root
      (make-container (window-container)
-       (window :x 100 :y 100 :width 150 :height 200)
+       (window :x 100 :y 100 :width 150 :height 200 :title "Text Boxes"
+               :widgets ((:one (text-box :x 10 :y 40 :width 50 :height 30))))
        (:buttons
         (window :x 300 :y 120 :width 300 :height 200 :title "Buttons"
-                :widgets ((:one (button :x 10 :y 30 :text "One"))
-                          (:two (button :x 10 :y 60 :text "Two"))
-                          (:three (button :x 10 :y 90 :text "Three"))
+                :widgets ((:one (button :x 10 :y 40 :text "One"))
+                          (:two (button :x 10 :y 70 :text "Two"))
+                          (:three (button :x 10 :y 100 :text "Three"))
+                          (label :text "Changable button:" :x 70 :y 25)
                           (:subject
-                           (button :x 70 :y 30 :text "Rat")))))
+                           (button :x 70 :y 40 :text "Rat")))))
        (window :x 200 :y 220 :width 250 :height 150))
      :windows)
     (make-instance 'widget-test-button-controller

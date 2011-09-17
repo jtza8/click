@@ -24,6 +24,16 @@
     right corner-bottom-right bottom-right bottom bottom-left
     corner-bottom-left))
 
+(defparameter *text-box-border-names*
+  '(corner-top-left top-left top top-right
+    corner-top-right right-top right right-bottom
+    corner-bottom-right bottom-right bottom bottom-left
+    corner-bottom-left left-bottom left left-top))
+
+(defparameter *text-box-box-names*
+  '(centre corner-top-left top corner-top-right
+    right corner-bottom-right bottom corner-bottom-left left))
+
 (defvar *base-node*)
 (defparameter *base-node-path* '(:gui))
 (defparameter *base-sprite-path*
