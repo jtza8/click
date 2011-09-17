@@ -9,7 +9,7 @@
 
 (defmethod initialize-instance :after ((container widget-container) &key)
   (desire-events container :key-down #'handle-key-down
-                 :mouse-button-down #'handle-mouse-button-down))
+                 :mouse-down #'handle-mouse-down))
 
 (defmethod focused-widget ((container widget-container) &optional (offset 0))
   (with-slots (widgets focused-widget) container
@@ -63,18 +63,18 @@
         (call-next-method))))
 
 (defmethod handle-key-down ((container widget-container) event)
-  (with-event-keys (key mod-key) event
+  (with-event-keys (key) event
     (if (eq key :tab)
         (offset-widget-focus container
-                             (if (find :lshift mod-key) -1 1))
+                             (if (eq (key-state :lshift) :press) -1 1))
         (send-event container event))))
 
-(defmethod handle-mouse-button-down ((container widget-container) event)
+(defmethod handle-mouse-down ((container widget-container) event)
   (send-event container event))
 
-(defmethod handle-mouse-button-down :around ((container widget-container) event)
+(defmethod handle-mouse-down :around ((container widget-container) event)
   (with-slots (widgets) container
-    (with-event-keys (x y) event
+    (multiple-value-bind (x y) (mouse-pos)
       (loop with found-focus-target
             for widget across widgets
             when (within widget x y)

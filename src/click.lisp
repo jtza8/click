@@ -24,4 +24,5 @@
                             :size 10))
              (dolist (node-name '(:centre :left :right :bottom))
                (setf (node-of window (list :panel node-name))
-                     (make-colour-sprite :colour '(0.1 0.1 0.1 1.0)))))))
+                     (make-instance 'colour-sprite
+                                    :colour '(0.1 0.1 0.1 1.0)))))))

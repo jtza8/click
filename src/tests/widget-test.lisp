@@ -33,14 +33,14 @@
              (setf (text subject) "Even a Bit Longer"))))))
 
 (defun test-widgets-manually ()
-  (with-display-system (:clear-colour '(0.1 0.1 0.1 1.0)
+  (with-display-system (:clear-colour '(0.5 0.5 0.5 1.0)
                         :width 1280
                         :height 800
                         :full-screen nil
                         :title "Widgets Test")
     (init-default-theme)
     (add-to-root
-     (make-windows
+     (make-container (window-container)
        (window :x 100 :y 100 :width 150 :height 200)
        (:buttons
         (window :x 300 :y 120 :width 300 :height 200 :title "Buttons"
@@ -53,5 +53,6 @@
      :windows)
     (make-instance 'widget-test-button-controller
       :view (widget-of-root :windows :buttons))
-    (with-event-loop #'simple-top-level-event-handler
+    (with-event-loop
+      (basic-event-handler)
       (update-display-system))))

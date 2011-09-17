@@ -19,9 +19,9 @@
    inactive-title-font))
 
 (defmethod initialize-instance :after ((window window) &key (title "Untitled"))
-  (desire-events window :mouse-button-down #'handle-mouse-button-down
-                 :mouse-button-up #'handle-mouse-button-up
-                 :mouse-motion #'handle-mouse-motion)
+  (desire-events window :mouse-down #'handle-mouse-down
+                 :mouse-up #'handle-mouse-up
+                 :mouse-pos #'handle-mouse-pos)
   (provide-events window :click-window-focus)
   (setf (title window) title))
 
@@ -42,22 +42,23 @@
       (active-panel *window-panel-names*
                     (node-of *base-node* :active :window :panel)))))
 
-(defmethod handle-mouse-button-down ((window window) event)
+(defmethod handle-mouse-down ((window window) event)
   (with-slots (dragging drag-x-offset drag-y-offset) window
-    (with-event-keys (x y button) event
-      (when (and (within window x y) (= button 1))
-        (setf dragging t
-              drag-x-offset (- (absolute-x window) x)
-              drag-y-offset (- (absolute-y window) y))))))
+    (with-event-keys (button) event
+      (multiple-value-bind (x y) (mouse-pos)
+        (when (and (within window x y) (eq button :left))
+          (setf dragging t
+                drag-x-offset (- (absolute-x window) x)
+                drag-y-offset (- (absolute-y window) y)))))))
 
-(defmethod handle-mouse-button-up ((window window) event)
+(defmethod handle-mouse-up ((window window) event)
   (with-slots (dragging) window
     (with-event-keys (button) event
-      (when (= button 1)
+      (when (eq button :left)
         (setf dragging nil))))
   (send-event window event))
 
-(defmethod handle-mouse-motion ((window window) event)
+(defmethod handle-mouse-pos ((window window) event)
   (with-slots ((window-x x) (window-y y) dragging drag-x-offset
                drag-y-offset parent) window
     (with-event-keys (x y) event

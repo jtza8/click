@@ -26,9 +26,9 @@
     (setf (text button) text
           ideal-width width)
     (update-width button))
-  (desire-events button :mouse-button-down #'handle-mouse-button-down
-                 :mouse-button-up #'handle-mouse-button-up
-                 :mouse-motion #'handle-mouse-motion
+  (desire-events button :mouse-down #'handle-mouse-down
+                 :mouse-up #'handle-mouse-up
+                 :mouse-pos #'handle-mouse-pos
                  :key-down #'handle-key-down
                  :key-up #'handle-key-up)
   (provide-events button :button-click))
@@ -90,37 +90,39 @@
     (setf focus value)
     (update-width button)))
 
-(internal update-button-down-state)
-(defmethod update-button-down-state ((button button) event)
+(internal update-button-state)
+(defmethod update-button-state ((button button))
   (with-slots (down) button
-    (with-event-keys (x y state) event
-      (setf down (and (= state 1) (within button x y))))))
+    (multiple-value-bind (x y) (mouse-pos)
+     (setf down (and (eq (mouse-button-state :left) :press)
+                     (within button x y))))))
 
-(defmethod handle-mouse-button-down ((button button) event)
+(defmethod handle-mouse-down ((button button) event)
   (with-event-keys ((mouse-button button)) event
-    (when (= mouse-button 1)
-     (update-button-down-state button event))))
+    (when (eq mouse-button :left)
+      (update-button-state button))))
 
-(defmethod handle-mouse-button-up ((button button) event)
+(defmethod handle-mouse-up ((button button) event)
   (with-slots (down) button
-    (with-event-keys (x y (mouse-button button)) event
-      (when (and (within button x y) (= mouse-button 1))
-        (send-event button `(:button-click :source ,button))
-        (setf down nil)))))
+    (with-event-keys ((mouse-button button)) event
+      (multiple-value-bind (x y) (mouse-pos)
+        (when (and (within button x y) (eq mouse-button :left))
+          (send-event button `(:button-click :source ,button))
+          (setf down nil))))))
 
-(defmethod handle-mouse-motion ((button button) event)
-  (update-button-down-state button event))
+(defmethod handle-mouse-pos ((button button) event)
+  (update-button-state button))
 
 (defmethod handle-key-down ((button button) event)
   (with-slots (down) button
     (with-event-keys (key) event
-      (when (eq key :space)
+      (when (eq key #\Space)
         (setf down t)))))
 
 (defmethod handle-key-up ((button button) event)
   (with-slots (down) button
     (with-event-keys (key) event
-      (when (and down (eq key :space))
+      (when (and down (eq key #\Space))
         (send-event button `(:button-click :source ,button))
         (setf down nil)))))
 
