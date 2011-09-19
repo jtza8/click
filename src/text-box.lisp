@@ -105,7 +105,58 @@
       (draw-snippet top-right)
       ;; Corner top right:
       (incf x (width top-right))
-      (draw-snippet corner-top-right))))
+      (draw-snippet corner-top-right)
+      ;; Left Top:
+      (move-to (- (width left-top)) 0)
+      (draw-snippet left-top)
+      ;; Right Top:
+      (setf x text-box-width)
+      (draw-snippet right-top)
+      ;; Left:
+      (move-to (- (width corner-top-left)) (height left-top))
+      (setf width (width corner-top-left)
+            height (- text-box-height
+                      (height left-top)
+                      (height left-bottom)))
+      (draw-snippet left)
+      ;; Right:
+      (move-to text-box-width (height right-top))
+      (setf width (width corner-top-right)
+            height (- text-box-height
+                      (height right-top)
+                      (height right-bottom)))
+      (draw-snippet right)
+      ;; Left bottom:
+      (setf x (- (width left-bottom)))
+      (incf y height)
+      (clear-width)
+      (clear-height)
+      (draw-snippet left-bottom)
+      ;; Right bottom:
+      (move-to text-box-width (- text-box-height
+                                 (height right-bottom)))
+      (draw-snippet right-bottom)
+      ;; Corner bottom left:
+      (move-to (- (width corner-bottom-left)) text-box-height)
+      (draw-snippet corner-bottom-left)
+      ;; Bottom left:
+      (setf x 0)
+      (draw-snippet bottom-left)
+      ;; Bottom
+      (incf x (width bottom-left))
+      (setf width (- text-box-width
+                     (width bottom-left)
+                     (width bottom-right))
+            height (height corner-bottom-left))
+      (draw-snippet bottom)
+      ;; Bottom right:
+      (incf x width)
+      (clear-width)
+      (clear-height)
+      (draw-snippet bottom-right)
+      ;; Corner bottom right:
+      (setf x text-box-width)
+      (draw-snippet corner-bottom-right))))
 
 (defmethod draw ((text-box text-box))
   (draw-border text-box)

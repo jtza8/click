@@ -6,4 +6,14 @@
 
 (defclass gui-widget (widget)
   ((focus :initform nil
-          :accessor focus)))
+          :accessor focus)
+   (ignore-focus :initform nil
+                 :accessor ignore-focus)))
+
+(defmethod (setf focus) (value (widget gui-widget))
+  (with-slots (ignore-focus focus) widget
+    (when ignore-focus
+      (error 'state-conflict
+             :a "IGNORE-FOCUS set to T"
+             :b "changing FOCUS"))
+    (setf focus value)))

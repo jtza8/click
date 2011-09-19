@@ -42,7 +42,10 @@
     (add-to-root
      (make-container (window-container)
        (window :x 100 :y 100 :width 150 :height 200 :title "Text Boxes"
-               :widgets ((:one (text-box :x 10 :y 40 :width 50 :height 30))))
+               :widgets ((:one-line
+                          (text-box :x 10 :y 30 :width 130 :height 20))
+                         (:multi-line
+                          (text-box :x 10 :y 60 :width 130 :height 130))))
        (:buttons
         (window :x 300 :y 120 :width 300 :height 200 :title "Buttons"
                 :widgets ((:one (button :x 10 :y 40 :text "One"))
