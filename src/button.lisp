@@ -92,8 +92,7 @@
 (defmethod update-button-state ((button button))
   (with-slots (down) button
     (multiple-value-bind (x y) (mouse-pos)
-     (setf down (and (eq (mouse-button-state :left) :press)
-                     (within button x y))))))
+      (setf down (and (mouse-down-p :left) (within button x y))))))
 
 (defmethod handle-mouse-down ((button button) event)
   (with-event-keys ((mouse-button button)) event

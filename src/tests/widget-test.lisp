@@ -54,7 +54,8 @@
                           (label :text "Changable button:" :x 70 :y 25)
                           (:subject
                            (button :x 70 :y 40 :text "Rat")))))
-       (window :x 200 :y 220 :width 250 :height 150))
+       (window :x 200 :y 220 :width 250 :height 150
+               :widgets ((label :text "Unfocus-able label." :x 80 :y 70))))
      :windows)
     (make-instance 'widget-test-button-controller
       :view (widget-of-root :windows :buttons))

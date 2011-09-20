@@ -8,21 +8,33 @@
   ())
 
 (defmethod initialize-instance :after ((container window-container) &key)
-  (desire-events container :mouse-down #'handle-mouse-down))
+  (desire-events container :mouse-down #'handle-mouse-down
+                 :key-down #'handle-key-down))
 
-(defmethod focus-window ((container window-container))
+(defmethod focused-window ((container window-container) &optional (offset 0))
   (with-slots (widgets) container
     (let ((length (length widgets)))
       (unless (zerop length)
-       (elt widgets (1- length))))))
+        (aref widgets (rem (+ (1- length) offset) length))))))
+
+(defmethod focus-window ((container window-container) target-window)
+  (with-slots (widgets) container
+    (let ((focused-window (focused-window container)))
+      (setf (focus focused-window) nil
+            (focus target-window) t)
+      (send-event focused-window '(:window-focus
+                                   :state nil))
+      (send-event target-window '(:window-focus
+                                  :state t))
+      (order-top container target-window))))
 
 (defmethod add-widget ((container window-container) (window widget)
                        &optional tag)
   (declare (ignore tag))
   (check-type window window)
-  (let ((focus-window (focus-window container)))
-    (unless (null focus-window)
-      (setf (focus focus-window) nil))
+  (let ((focused-window (focused-window container)))
+    (unless (null focused-window)
+      (setf (focus focused-window) nil))
     (setf (focus window) t))
   (call-next-method))
 
@@ -31,25 +43,26 @@
     (when (> (length widgets) 1)
       (with-event-keys (button) event
         (multiple-value-bind (x y) (mouse-pos)
-          (unless (and (within (focus-window container) x y)
+          (unless (and (within (focused-window container) x y)
                        (eq button :left))
             (loop for i from (- (length widgets) 1) downto 0
                   for new-window = (aref widgets i)
                   when (within new-window x y)
-                  do (let ((focus-window (focus-window container)))
-                       (setf (focus focus-window) nil
-                             (focus new-window) t)
-                       (send-event focus-window '(:click-window-focus
-                                                  :state nil))
-                       (send-event new-window '(:click-window-focus
-                                                :state t))
-                    (order-top container new-window)
-                    (return)
-                    ;; Click to focus?
-                    ;; (return-from handle-mouse-button-down)
-                    )))))))
+                  do (progn
+                       (focus-window container new-window)
+                       (return)
+                       ;; Click to focus?
+                       ;; (return-from handle-mouse-down)
+                       )))))))
   (send-event container event))
+
+(defmethod handle-key-down ((container window-container) event)
+  (with-event-keys (key) event
+    (if (and (key-down-p :lalt :ralt)
+             (eq key :pagedown))
+        (focus-window container (focused-window container 1))
+        (send-event container event))))
 
 (defmethod send-event ((container window-container) event &rest targets)
   (declare (ignore targets))
-  (call-next-method container event (focus-window container)))
+  (call-next-method container event (focused-window container)))

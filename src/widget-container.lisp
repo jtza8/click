@@ -11,42 +11,57 @@
   (desire-events container :key-down #'handle-key-down
                  :mouse-down #'handle-mouse-down))
 
-(defmethod focused-widget ((container widget-container) &optional (offset 0))
+(declaim (inline focusable-widgets))
+(defmethod focusable-widgets ((container widget-container))
   (with-slots (widgets focused-widget) container
-    (if (or (zerop offset) (null focused-widget))
-        focused-widget
-        (let ((index (rem (+ (position focused-widget widgets) offset)
-                          (length widgets))))
-          (aref widgets (if (minusp index)
-                            (+ (length widgets) index)
-                            index))))))
+    (remove-if #'ignore-focus widgets)))
 
-(defmethod focus-widget ((container widget-container) (widget widget))
+(defmethod focused-widget ((container widget-container) &optional (offset 0))
+  (with-slots (focused-widget) container
+    (let ((widgets (focusable-widgets container)))
+      (if (or (zerop offset) (null focused-widget))
+          focused-widget
+          (let ((index (rem (+ (position focused-widget widgets) offset)
+                            (length widgets))))
+            (aref widgets (if (minusp index)
+                              (+ (length widgets) index)
+                              index)))))))
+
+(defmethod focus-widget ((container widget-container) widget)
   (with-slots (widgets focused-widget) container
-    (unless (find widget widgets)
-      (error 'invalid-widget :widget widget))
-    (setf (focus focused-widget) nil
-          (focus widget) t
-          focused-widget widget)))
+    (let ((widgets (focusable-widgets container)))
+      (unless (or (null widget) (find widget widgets))
+        (error 'invalid-widget :widget widget))
+      (when focused-widget (setf (focus focused-widget) nil))
+      (when widget (setf (focus widget) t))
+      (setf focused-widget widget))))
 
 (defmethod offset-widget-focus ((container widget-container)
                                 &optional (offset 0))
   (with-slots (focused-widget widgets) container
-    (when (or (zerop offset) (zerop (length widgets)))
-      (return-from offset-widget-focus))
-    (let ((widget (focused-widget container offset)))
-      (setf (focus focused-widget) nil
-            (focus widget) t
-            focused-widget widget))))
+    (let ((widgets (remove-if #'ignore-focus widgets)))
+      (when (or (zerop offset) (zerop (length widgets)))
+        (return-from offset-widget-focus))
+      (let ((widget (focused-widget container offset)))
+        (setf (focus focused-widget) nil
+              (focus widget) t
+              focused-widget widget)))))
+
+(defmethod (setf focus) :after (value (container widget-container))
+  (with-slots (focused-widget) container
+    (when focused-widget
+      (setf (focus focused-widget) value))))
 
 (defmethod add-widget :after ((container widget-container) (widget widget)
                               &optional tag)
   (declare (ignore tag))
-  (with-slots (widgets focused-widget) container
-    (when (= (length widgets) 1)
-      (let ((widget (aref widgets 0)))
-        (setf (focus widget) t
-              focused-widget widget)))))
+  (with-slots (focused-widget) container
+    (let ((widgets (focusable-widgets container)))
+      (when (and (null focused-widget)
+                 (> (length widgets) 0))
+        (let ((widget (aref widgets 0)))
+          (setf (focus widget) t
+                focused-widget widget))))))
 
 (defmethod remove-widget :around ((container widget-container) (widget widget)
                                   &key (unsubscribes t))
@@ -66,7 +81,9 @@
   (with-event-keys (key) event
     (if (eq key :tab)
         (offset-widget-focus container
-                             (if (eq (key-state :lshift) :press) -1 1))
+                             (if (or (key-down-p :lshift)
+                                     (key-down-p :rshift))
+                                 -1 1))
         (send-event container event))))
 
 (defmethod handle-mouse-down ((container widget-container) event)

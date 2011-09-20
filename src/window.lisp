@@ -22,7 +22,7 @@
   (desire-events window :mouse-down #'handle-mouse-down
                  :mouse-up #'handle-mouse-up
                  :mouse-pos #'handle-mouse-pos)
-  (provide-events window :click-window-focus)
+  (provide-events window :window-focus)
   (setf (title window) title))
 
 (defmethod init-sprites :after ((window window))

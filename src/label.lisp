@@ -5,7 +5,8 @@
 (in-package :click)
 
 (defclass label (gui-widget)
-  ((text-sprite :initform (clone (node-of *base-node* :label :font)))))
+  ((ignore-focus :initform t)
+   (text-sprite :initform (clone (node-of *base-node* :label :font)))))
 
 (defmethod text ((label label))
   (text (slot-value label 'text-sprite)))
