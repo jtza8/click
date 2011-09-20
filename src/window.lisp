@@ -29,18 +29,18 @@
   (with-slots (inactive-shadows active-shadows inactive-panel active-panel
                inactive-title-font active-title-font) window
     (setf inactive-title-font
-          (clone (node-of *base-node* :inactive :window :title-font))
+          (clone (node-of *base-node* :window :inactive :title-font))
           active-title-font
-          (clone (node-of *base-node* :active :window :title-font)))
+          (clone (node-of *base-node* :window :active :title-font)))
     (init-class-snippets window
       (inactive-shadows *shadow-names*
-                        (node-of *base-node* :inactive :window :shadows))
+                        (node-of *base-node* :window :inactive :shadows))
       (active-shadows *shadow-names*
-                      (node-of *base-node* :active :window :shadows))
+                      (node-of *base-node* :window :active :shadows))
       (inactive-panel *window-panel-names*
-                      (node-of *base-node* :inactive :window :panel))
+                      (node-of *base-node* :window :inactive :panel))
       (active-panel *window-panel-names*
-                    (node-of *base-node* :active :window :panel)))))
+                    (node-of *base-node* :window :active :panel)))))
 
 (defmethod handle-mouse-down ((window window) event)
   (with-slots (dragging drag-x-offset drag-y-offset) window

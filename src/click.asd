@@ -1,5 +1,5 @@
 (defsystem "click"
-  :depends-on ("interact" "meta-package")
+  :depends-on ("interact" "meta-package" "split-sequence")
   :author "Jens Thiede"
   :license "BSD-style"
   :serial t

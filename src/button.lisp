@@ -37,20 +37,20 @@
                active-border-sprites inactive-text-sprite
                active-text-sprite) button
     (setf inactive-text-sprite
-          (clone (node-of *base-node* :inactive :button :font))
+          (clone (node-of *base-node* :button :inactive :font))
           active-text-sprite
-          (clone (node-of *base-node* :active :button :font)))
+          (clone (node-of *base-node* :button :active :font)))
     (init-class-snippets button
       (inactive-button-sprites *button-sprite-names*
-                               (node-of *base-node* :inactive :button :up))
+                               (node-of *base-node* :button :inactive :up))
       (active-button-sprites *button-sprite-names*
-                             (node-of *base-node* :active :button :up))
+                             (node-of *base-node* :button :active :up))
       (active-button-down-sprites *button-sprite-names*
-                                  (node-of *base-node* :active :button :down))
+                                  (node-of *base-node* :button :active :down))
       (inactive-border-sprites *button-border-sprite-names*
-                               (node-of *base-node* :inactive :button :border))
+                               (node-of *base-node* :button :inactive :border))
       (active-border-sprites *button-border-sprite-names*
-                             (node-of *base-node* :active :button :border)))))
+                             (node-of *base-node* :button :active :border)))))
 
 (internal update-width)
 (defmethod update-width ((button button))

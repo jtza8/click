@@ -3,7 +3,7 @@
 ; in the root directory of this project.
 
 (defpackage :click
-  (:use :cl :cl-user :interact :meta-package))
+  (:use :cl :cl-user :interact :meta-package :split-sequence))
 (in-package :click)
 
 (defparameter *shadow-names*

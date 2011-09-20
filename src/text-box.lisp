@@ -8,20 +8,47 @@
   ((inactive-box-sprites :allocation :class)
    (inactive-border-sprites :allocation :class)
    (active-box-sprites :allocation :class)
-   (active-border-sprites :allocation :class)))
+   (active-border-sprites :allocation :class)
+   (cursor-sprite :allocation :class)
+   (cursor-timer :initform (make-instance 'watch))
+   text-sprites))
+
+(defmethod (setf text) (value (text-box text-box))
+  (with-slots (text-sprites) text-box
+    (setf (text (aref text-sprites 0)) value)))
+
+(defmethod text ((text-box text-box))
+  (with-slots (text-sprites) text-box
+    (text (aref text-sprites 0))))
+
+(defmethod (setf focus) :after (value (text-box text-box))
+  (with-slots (cursor-timer) text-box
+    (when value
+      (reset cursor-timer t))))
 
 (defmethod init-sprites ((text-box text-box))
   (with-slots (inactive-border-sprites inactive-box-sprites active-box-sprites
-               active-border-sprites) text-box
-   (init-class-snippets text-box
-     (inactive-box-sprites *text-box-box-names*
-                           (node-of *base-node* :inactive :text-box :box))
-     (active-box-sprites *text-box-box-names*
-                         (node-of *base-node* :active :text-box :box))
-     (inactive-border-sprites *text-box-border-names*
-                           (node-of *base-node* :inactive :text-box :border))
-     (active-border-sprites *text-box-border-names*
-                            (node-of *base-node* :active :text-box :border)))))
+               active-border-sprites cursor-sprite text-sprites) text-box
+    (unless (slot-boundp text-box 'cursor-sprite)
+      (setf cursor-sprite (clone (node-of *base-node* :text-box :cursor))))
+    (setf text-sprites
+          (make-array 1
+            :initial-element (clone (node-of *base-node* :text-box :font))
+            :adjustable t))
+    (init-class-snippets text-box
+      (inactive-box-sprites *text-box-box-names*
+                            (node-of *base-node* :text-box :inactive :box))
+      (active-box-sprites *text-box-box-names*
+                          (node-of *base-node* :text-box :active :box))
+      (inactive-border-sprites *text-box-border-names*
+                               (node-of *base-node*
+                                        :text-box :inactive :border))
+      (active-border-sprites *text-box-border-names*
+                             (node-of *base-node* :text-box :active :border)))))
+
+;; (defmethod initialize-instance :after ((text-box text-box) &key)
+;;   (with-slots (text-sprites) text-box
+;;     (setf)))
 
 (defmethod draw-box ((text-box text-box))
   (with-slots (focus inactive-box-sprites active-box-sprites
@@ -158,6 +185,12 @@
       (setf x text-box-width)
       (draw-snippet corner-bottom-right))))
 
+(defmethod draw-cursor ((text-box text-box))
+  (with-slots (cursor-sprite cursor-timer focus) text-box
+    (when (and focus (evenp (truncate (lap cursor-timer :sec))))
+     (draw-sprite cursor-sprite :x 5 :y 3))))
+
 (defmethod draw ((text-box text-box))
   (draw-border text-box)
-  (draw-box text-box))
+  (draw-box text-box)
+  (draw-cursor text-box))

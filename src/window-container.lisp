@@ -59,7 +59,7 @@
 (defmethod handle-key-down ((container window-container) event)
   (with-event-keys (key) event
     (if (and (key-down-p :lalt :ralt)
-             (eq key :pagedown))
+             (eq key :pageup))
         (focus-window container (focused-window container 1))
         (send-event container event))))
 
